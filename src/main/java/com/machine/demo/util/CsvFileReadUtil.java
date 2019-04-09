@@ -7,9 +7,16 @@ import java.util.Map;
 
 import org.springframework.util.StringUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class CsvFileReadUtil {
 
 	public static Map<String, List<String>> readCsvData(byte[] bytes) {
+		if (bytes == null || bytes.length <= 0) {
+			log.info("Empty csv file data");
+			return null;
+		}
 		String completeData = new String(bytes);
 		String[] rows = completeData.split("\\r\\n");
 		Map<String, List<String>> map = new HashMap<>();
@@ -26,6 +33,7 @@ public class CsvFileReadUtil {
 				setCell(map, keyMap, data, length);
 			}
 		}
+		log.info("Csv data read successfully ! {} ", map.size());
 		return map;
 	}
 

@@ -39,6 +39,11 @@ public class ExcelServiceImpl implements ExcelService {
 		if (CollectionUtils.isEmpty(files)) {
 			throw new MachineException("Files are not present !", HttpStatus.BAD_REQUEST);
 		}
+		for (MultipartFile file : files) {
+			if (!TextUtil.isValidFile(TextUtil.getExtensionName(file.getOriginalFilename()))) {
+				throw new MachineException("File format is invalid !", HttpStatus.BAD_REQUEST);
+			}
+		}
 		List<ExcelEntity> entities = new ArrayList<>();
 		for (MultipartFile file : files) {
 			List<ExcelEntity> requestList = getEntities(ReadExcelUtil.readExcelData(file.getBytes()),
@@ -46,6 +51,60 @@ public class ExcelServiceImpl implements ExcelService {
 			if (!CollectionUtils.isEmpty(requestList)) {
 				entities.addAll(requestList);
 			}
+		}
+		excelDao.saveList(entities);
+		if (CollectionUtils.isEmpty(sortOrder)) {
+			sortOrder = entities.stream().map(r -> r.getColumnName()).collect(Collectors.toList());
+		}
+		List<ExcelEntity> responseList = excelDao.getByColumnName(sortOrder);
+		if (CollectionUtils.isEmpty(responseList)) {
+			return null;
+		}
+		List<Integer> ids = responseList.stream().map(r -> r.getId()).collect(Collectors.toList());
+		if (!CollectionUtils.isEmpty(ids)) {
+			excelDao.deleteByIds(ids);
+		}
+		if (StringUtils.isEmpty(fileType)) {
+			return WriteExcelUtil.getExcelResponse(getExcelWriteData(responseList, sortOrder), "Machine_Learning");
+		} else if (fileType.equalsIgnoreCase("xlsx") || fileType.equalsIgnoreCase("csv")) {
+			return WriteExcelUtil.getExcelResponse(getExcelWriteData(responseList, sortOrder), "Machine_Learning");
+		} else if (fileType.equalsIgnoreCase("txt")) {
+			if (StringUtils.isEmpty(delimeter)) {
+				delimeter = "|";
+			}
+			return TextUtil.getTextResponse(getExcelWriteData(responseList, sortOrder), "Machine_Learning", delimeter);
+		} else {
+			return null;
+		}
+	}
+
+	@Override
+	public ResponseEntity<Resource> saveReadFile(List<String> sortOrder, String fileType, String delimeter,
+			MultipartFile firstFile, MultipartFile secondFile) throws Exception {
+		if (firstFile == null && secondFile == null) {
+			throw new MachineException("Files are not present !", HttpStatus.BAD_REQUEST);
+		}
+		if (firstFile != null) {
+			if (!TextUtil.isValidFile(TextUtil.getExtensionName(firstFile.getOriginalFilename()))) {
+				throw new MachineException("File format is invalid !", HttpStatus.BAD_REQUEST);
+			}
+		}
+		if (secondFile != null) {
+			if (!TextUtil.isValidFile(TextUtil.getExtensionName(secondFile.getOriginalFilename()))) {
+				throw new MachineException("File format is invalid !", HttpStatus.BAD_REQUEST);
+			}
+		}
+		List<ExcelEntity> firstList = getEntityList(firstFile, sortOrder);
+		List<ExcelEntity> entities = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(firstList)) {
+			entities.addAll(firstList);
+		}
+		List<ExcelEntity> secondList = getEntityList(secondFile, sortOrder);
+		if (!CollectionUtils.isEmpty(secondList)) {
+			entities.addAll(secondList);
+		}
+		if (CollectionUtils.isEmpty(entities)) {
+			return null;
 		}
 		excelDao.saveList(entities);
 		if (CollectionUtils.isEmpty(sortOrder)) {
@@ -71,48 +130,6 @@ public class ExcelServiceImpl implements ExcelService {
 		}
 	}
 
-	@Override
-	public ResponseEntity<Resource> saveReadFile(List<String> sortOrder, String fileType, String delimeter,
-			MultipartFile firstFile, MultipartFile secondFile) throws Exception {
-		if (firstFile == null && secondFile == null) {
-			throw new MachineException("Files are not present !", HttpStatus.BAD_REQUEST);
-		}
-		List<ExcelEntity> firstList = getEntityList(firstFile, sortOrder);
-		List<ExcelEntity> entities = new ArrayList<>();
-		if (!CollectionUtils.isEmpty(firstList)) {
-			entities.addAll(firstList);
-		}
-		List<ExcelEntity> secondList = getEntityList(secondFile, sortOrder);
-		if (!CollectionUtils.isEmpty(secondList)) {
-			entities.addAll(secondList);
-		}
-		excelDao.saveList(entities);
-		if (CollectionUtils.isEmpty(sortOrder)) {
-			sortOrder = entities.stream().map(r -> r.getColumnName()).collect(Collectors.toList());
-		}
-		List<ExcelEntity> responseList = excelDao.getByColumnName(sortOrder);
-		if (CollectionUtils.isEmpty(responseList)) {
-			return null;
-		}
-		List<Integer> ids = responseList.stream().map(r -> r.getId()).collect(Collectors.toList());
-		System.out.println("ids : " + ids);
-		if (!CollectionUtils.isEmpty(ids)) {
-			int delete = excelDao.deleteByIds(ids);
-			System.out.println("delete : " + delete);
-		}
-		if (StringUtils.isEmpty(fileType) || fileType.equalsIgnoreCase("xlsx") || fileType.equalsIgnoreCase("csv")) {
-			return WriteExcelUtil.getExcelResponse(getExcelWriteData(responseList, sortOrder), "Machine_Learning");
-		} else if (fileType.equalsIgnoreCase("txt")) {
-			if (StringUtils.isEmpty(delimeter)) {
-				delimeter = "|";
-			}
-			return TextUtil.getTextResponse(getExcelWriteData(responseList, sortOrder), "Machine_Learning", delimeter);
-		} else {
-			return null;
-		}
-
-	}
-
 	private List<ExcelEntity> getEntityList(MultipartFile file, List<String> sortOrder) throws Exception {
 		if (file == null || file.isEmpty()) {
 			return null;
@@ -134,24 +151,23 @@ public class ExcelServiceImpl implements ExcelService {
 		List<ExcelEntity> entitiesList = new ArrayList<>();
 		if (CollectionUtils.isEmpty(sortOrder)) {
 			for (Entry<String, List<String>> map : data.entrySet()) {
-				entitiesList.add(convertToEntity(map.getKey(), map.getValue(), fileName, map.getValue().size()));
+				entitiesList.add(convertToEntity(map.getKey(), map.getValue(), fileName));
 			}
 		} else {
 			for (Entry<String, List<String>> map : data.entrySet()) {
 				if (sortOrder.contains(map.getKey())) {
-					entitiesList.add(convertToEntity(map.getKey(), map.getValue(), fileName, map.getValue().size()));
+					entitiesList.add(convertToEntity(map.getKey(), map.getValue(), fileName));
 				}
 			}
 		}
 		return entitiesList;
 	}
 
-	private ExcelEntity convertToEntity(String columnName, List<String> data, String fileName, int size) {
+	private ExcelEntity convertToEntity(String columnName, List<String> data, String fileName) {
 		ExcelEntity request = new ExcelEntity();
 		request.setFileName(fileName);
 		request.setColumnName(columnName);
 		request.setColumnData(JsonUtil.getJson(data));
-		request.setDataSize(size);
 		return request;
 	}
 

@@ -22,29 +22,36 @@ public class ExcelController {
 	@Autowired
 	private ExcelService excelService;
 
+	/*
+	 * Use it if there are multiple file/
+	 * 
+	 */
 	@PostMapping("/readWriteMultipleExcel")
 	public ResponseEntity<Resource> readWriteMulipleExcel(@RequestParam(required = false) List<String> sortOrder,
 			@RequestParam(required = false) String fileType, @RequestParam(required = false) String delimeter,
 			@RequestParam(required = false) List<MultipartFile> files) throws Exception {
 		ResponseEntity<Resource> response = excelService.saveReadFiles(sortOrder, fileType, delimeter, files);
-		return (response == null) ? null : response;
+		if (response == null) {
+			throw new MachineException("Error in file writing !", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return response;
 	}
 
+	/*
+	 * Use it if One or two files
+	 * 
+	 */
 	@PostMapping("/readWriteExcel")
 	public ResponseEntity<Resource> readWriteExcel(@RequestParam(required = false) List<String> sortOrder,
 			@RequestParam(required = false) String fileType, @RequestParam(required = false) String delimeter,
 			@RequestParam(required = false) MultipartFile firstFile,
 			@RequestParam(required = false) MultipartFile secondFile) throws Exception {
-//		if (extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")
-//				|| extension.equalsIgnoreCase("csv")) {
-//			throw new MachineException("Files are not present !", HttpStatus.BAD_REQUEST);
-//		}
 		ResponseEntity<Resource> response = excelService.saveReadFile(sortOrder, fileType, delimeter, firstFile,
 				secondFile);
 		if (response == null) {
 			throw new MachineException("Error in file writing !", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return (response == null) ? null : response;
+		return response;
 	}
 
 }

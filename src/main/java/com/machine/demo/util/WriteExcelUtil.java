@@ -18,6 +18,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class WriteExcelUtil {
 
 	public static <T> ResponseEntity<Resource> getExcelResponse(Map<String, List<String>> data, String fileName)
@@ -56,6 +59,7 @@ public class WriteExcelUtil {
 			column++;
 		}
 		workbook.write(fileStream);
+		log.info("Excel data write successfully !");
 		return fileStream;
 	}
 

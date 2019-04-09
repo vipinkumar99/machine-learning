@@ -1,6 +1,10 @@
 package com.machine.demo.entity;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 import lombok.Getter;
@@ -10,9 +14,12 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "excel_table")
-public class ExcelEntity extends BaseEntity {
+public class ExcelEntity {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
 	private String columnName;
+	@Column(length = 80000)
 	private String columnData;
 	private String fileName;
-	private int dataSize;
 }

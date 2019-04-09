@@ -12,11 +12,15 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ReadExcelUtil {
 
 	@SuppressWarnings("resource")
 	public static Map<String, List<String>> readExcelData(byte[] bytes) throws Exception {
 		if (bytes == null || bytes.length <= 0) {
+			log.info("Empty excel file data ");
 			return null;
 		}
 		Map<String, List<String>> data = null;
@@ -27,10 +31,12 @@ public class ReadExcelUtil {
 			Sheet sheet = workbook.getSheetAt(0);
 			data = columnData(sheet);
 		} catch (Exception e) {
+			log.error("Error occured in reading excel : ", e);
 			return null;
 		} finally {
 			fis.close();
 		}
+		log.info("Excel data read successfully ! {} ", data.size());
 		return data;
 	}
 

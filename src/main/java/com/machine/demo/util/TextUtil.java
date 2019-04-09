@@ -1,7 +1,6 @@
 package com.machine.demo.util;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class TextUtil {
 	public static String NEW_LINE = System.getProperty("line.separator");
 
@@ -48,6 +51,7 @@ public class TextUtil {
 		}
 		baos.write(line.getBytes());
 		baos.close();
+		log.info("Text data write successfully !");
 		return baos;
 	}
 
@@ -70,4 +74,13 @@ public class TextUtil {
 		System.out.print(sb.toString());
 		return sb.toString();
 	}
+
+	public static boolean isValidFile(String extension) {
+		if (StringUtils.isEmpty(extension)) {
+			return false;
+		}
+		return extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xls")
+				|| extension.equalsIgnoreCase("csv");
+	}
+
 }

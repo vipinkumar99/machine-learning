@@ -14,6 +14,7 @@ public class GlobalExceptionHandler {
 		response.setStatus(exception.getStatus().value());
 		response.setMesage(exception.getMessage());
 		response.setTimetamp(System.currentTimeMillis());
+		exception.printStackTrace();
 		return new ResponseEntity<>(response, exception.getStatus());
 	}
 

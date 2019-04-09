@@ -52,7 +52,7 @@ public class ExcelDaoImpl implements ExcelDao {
 	public List<ExcelEntity> getByColumnName(List<String> columnNames) {
 		@SuppressWarnings("rawtypes")
 		Query query = getSession().createQuery(" from ExcelEntity where columnName in (:colName)");
-		query.setParameter("colName", columnNames);
+		query.setParameterList("colName", columnNames);
 		return query.getResultList();
 	}
 
